@@ -12,11 +12,11 @@
             <h2>Books</h2>
             {% for book in books %}
             <div class="book">
-                <a href="?book_id={{ book[0] }}" style="text-decoration: none; color: inherit;">
-                    <strong>{{ book[1] }}</strong><br>
-                    by {{ book[2] }}<br>
-                    Highlights: {{ book[3] }}<br>
-                    Last: {{ book[4] or 'N/A' }}
+                <a href="?book_id={{ book.id }}" style="text-decoration: none; color: inherit;">
+                    <strong>{{ book.title }}</strong><br>
+                    by {{ book.author }}<br>
+                    Highlights: {{ book.highlight_count }}<br>
+                    Last: {{ book.last_highlight_date or 'N/A' }}
                 </a>
             </div>
             {% endfor %}
@@ -32,29 +32,29 @@
             {% if query %}
             <h1>Search Results for "{{ query }}"</h1>
             {% if highlights %}
-            {% for highlight in highlights %}
+            {% for highlight, book, highlighted_quote, highlighted_title, highlighted_author in highlights %}
             <div class="highlight">
                 <div class="meta">
-                    <strong>{{ highlight[6] }}</strong> by {{ highlight[7] }}<br>
-                    Type: {{ highlight[1] }} | Location: {{ highlight[3] }} | Date: {{ highlight[4] }}
-                    {% if highlight[2] %} | Page: {{ highlight[2] }}{% endif %}
+                    <strong>{{ highlighted_title }}</strong> by {{ highlighted_author }}<br>
+                    Type: {{ highlight.highlight_type }} | Location: {{ highlight.location }} | Date: {{ highlight.date_added }}
+                    {% if highlight.page %} | Page: {{ highlight.page }}{% endif %}
                 </div>
-                <p>{{ highlight[5] | safe }}</p>
+                <p>{{ highlighted_quote | safe }}</p>
             </div>
             {% endfor %}
             {% else %}
             <p>No results found.</p>
             {% endif %}
             {% elif selected_book %}
-            <h1>{{ selected_book[1] }}</h1>
-            <h2>by {{ selected_book[2] }}</h2>
+            <h1>{{ selected_book.title }}</h1>
+            <h2>by {{ selected_book.author }}</h2>
             {% for highlight in highlights %}
             <div class="highlight">
                 <div class="meta">
-                    Type: {{ highlight[1] }} | Location: {{ highlight[3] }} | Date: {{ highlight[4] }}
-                    {% if highlight[2] %} | Page: {{ highlight[2] }}{% endif %}
+                    Type: {{ highlight.highlight_type }} | Location: {{ highlight.location }} | Date: {{ highlight.date_added }}
+                    {% if highlight.page %} | Page: {{ highlight.page }}{% endif %}
                 </div>
-                <p>{{ highlight[5] }}</p>
+                <p>{{ highlight.quote }}</p>
             </div>
             {% endfor %}
             {% else %}

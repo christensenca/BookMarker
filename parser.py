@@ -3,17 +3,18 @@ import re
 import sys
 import datetime
 from dataclasses import dataclass
+from app.models import Book, Highlight
 from typing import Optional
 
-@dataclass
-class ParsedEntry:
-    book: str
-    author: str
-    highlight_type: str
-    page: Optional[int] 
-    location: str
-    date_added: Optional[str]
-    quote: str
+# @dataclass
+# class ParsedEntry:
+#     book: str
+#     author: str
+#     highlight_type: str
+#     page: Optional[int] 
+#     location: str
+#     date_added: Optional[str]
+#     quote: str
 
 def parse_book_author(line):
     """Parse book title and author from the first line."""
@@ -64,19 +65,19 @@ def parse_clippings(text):
         
         # Quote
         quote = parse_quote(lines[2:])
-        
-        if book and location and quote:  # Required fields
-            parsed.append(
-                ParsedEntry(
-                    book=book,
-                    author=author,
-                    highlight_type=highlight_type,
-                    page=page,
-                    location=location,
-                    date_added=date_added,
-                    quote=quote
-                )
-            )
+
+        book_obj = Book(title=book, author=author)
+        highlight_obj = Highlight(
+            book_id=None,  # This will be set later when inserting into the database
+            highlight_type=highlight_type,
+            page=page,
+            location=location,
+            date_added=date_added,
+            quote=quote
+        )
+
+
+        parsed.append((book_obj, highlight_obj))
     return parsed
 
 

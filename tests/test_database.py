@@ -61,11 +61,11 @@ def test_get_books_with_stats_with_data(conn):
     books = get_books_with_stats(conn)
     assert len(books) == 1
     book = books[0]
-    assert book[0] == book_id  # id
-    assert book[1] == "Test Book"  # title
-    assert book[2] == "Test Author"  # author
-    assert book[3] == 2  # highlight_count
-    assert book[4] == "2024-11-11T12:00:00"  # last_highlight_date
+    assert book.id == book_id  # id
+    assert book.title == "Test Book"  # title
+    assert book.author == "Test Author"  # author
+    assert book.highlight_count == 2  # highlight_count
+    assert book.last_highlight_date == "2024-11-11T12:00:00"  # last_highlight_date
 
 def test_get_highlights_for_book(conn):
     cursor = conn.cursor()
@@ -87,8 +87,8 @@ def test_get_highlights_for_book(conn):
     highlights = get_highlights_for_book(conn, book_id)
     assert len(highlights) == 2
     # Should be ordered by date_added DESC
-    assert highlights[0][5] == "Second"  # quote
-    assert highlights[1][5] == "First"
+    assert highlights[0].quote == "Second"  # quote
+    assert highlights[1].quote == "First"
 
 def test_get_book_by_id(conn):
     cursor = conn.cursor()
@@ -97,7 +97,9 @@ def test_get_book_by_id(conn):
     conn.commit()
     
     book = get_book_by_id(conn, book_id)
-    assert book == (book_id, "Title", "Author")
+    assert book.id == book_id
+    assert book.title == "Title"
+    assert book.author == "Author"
     
     # Non-existent
     assert get_book_by_id(conn, 999) is None
@@ -118,9 +120,10 @@ def test_search_highlights(conn):
     # Search in quote
     results = search_highlights(conn, "searchable")
     assert len(results) == 1
-    assert results[0][5] == "This is a searchable quote"  # quote
-    assert results[0][6] == "Search Book"  # title
-    assert results[0][7] == "Search Author"  # author
+    highlight, book = results[0]
+    assert highlight.quote == "This is a searchable quote"  # quote
+    assert book.title == "Search Book"  # title
+    assert book.author == "Search Author"  # author
     
     # Search in title
     results = search_highlights(conn, "Book")
@@ -135,7 +138,9 @@ def test_insert_book_new(conn):
     assert book_id is not None
     # Check it was inserted
     book = get_book_by_id(conn, book_id)
-    assert book == (book_id, "New Book", "New Author")
+    assert book.id == book_id
+    assert book.title == "New Book"
+    assert book.author == "New Author"
 
 def test_insert_book_existing(conn):
     # Insert first time
@@ -152,8 +157,8 @@ def test_insert_highlight(conn):
     # Check highlights
     highlights = get_highlights_for_book(conn, book_id)
     assert len(highlights) == 1
-    assert highlights[0][1] == "Highlight"  # type
-    assert highlights[0][5] == "Quote text"  # quote
+    assert highlights[0].highlight_type == "Highlight"  # type
+    assert highlights[0].quote == "Quote text"  # quote
 
 def test_insert_highlight_duplicate(conn):
     book_id = insert_book(conn, "Book Dup", "Author Dup")

@@ -19,15 +19,15 @@ def main():
 
     parsed_entries = parse_clippings(text)
     if last_import_date:
-        parsed_entries = [e for e in parsed_entries if not e.date_added or e.date_added > last_import_date]
+        parsed_entries = [e for e in parsed_entries if not e[1].date_added or e[1].date_added > last_import_date]
     print(f"Parsed {len(parsed_entries)} entries.")
 
-    for entry in parsed_entries:
+    for book, highlight in parsed_entries:
         # Insert or get book
-        book_id = insert_book(conn, entry.book, entry.author)
+        book_id = insert_book(conn, book.title, book.author)
 
         # Insert highlight
-        insert_highlight(conn, book_id, entry.highlight_type, entry.page, entry.location, entry.date_added, entry.quote)
+        insert_highlight(conn, book_id, highlight.highlight_type, highlight.page, highlight.location, highlight.date_added, highlight.quote)
 
     conn.commit()
 

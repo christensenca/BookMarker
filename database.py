@@ -68,6 +68,7 @@ def set_last_import_date(conn, date_str):
 
 
 def get_books_with_stats(conn):
+    from app.models import Book
     cursor = conn.cursor()
     cursor.execute("""
         SELECT b.id, b.title, b.author, COUNT(h.id) as highlight_count, MAX(h.date_added) as last_highlight_date
@@ -76,9 +77,23 @@ def get_books_with_stats(conn):
         GROUP BY b.id, b.title, b.author
         ORDER BY last_highlight_date DESC
     """)
-    return cursor.fetchall()
+    results = cursor.fetchall()
+    
+    books = []
+    for row in results:
+        book = Book(
+            id=row[0],
+            title=row[1],
+            author=row[2],
+            highlight_count=row[3],
+            last_highlight_date=row[4]
+        )
+        books.append(book)
+    
+    return books
 
 def get_highlights_for_book(conn, book_id):
+    from app.models import Highlight
     cursor = conn.cursor()
     cursor.execute("""
         SELECT h.id, h.highlight_type, h.page, h.location, h.date_added, h.quote
@@ -86,24 +101,60 @@ def get_highlights_for_book(conn, book_id):
         WHERE h.book_id = ?
         ORDER BY h.date_added DESC
     """, (book_id,))
-    return cursor.fetchall()
+    results = cursor.fetchall()
+    
+    highlights = []
+    for row in results:
+        highlight = Highlight(
+            id=row[0],
+            book_id=book_id,
+            highlight_type=row[1],
+            page=row[2],
+            location=row[3],
+            date_added=row[4],
+            quote=row[5]
+        )
+        highlights.append(highlight)
+    
+    return highlights
 
 def get_book_by_id(conn, book_id):
+    from app.models import Book
     cursor = conn.cursor()
     cursor.execute("SELECT id, title, author FROM books WHERE id = ?", (book_id,))
-    return cursor.fetchone()
+    row = cursor.fetchone()
+    if row:
+        return Book(id=row[0], title=row[1], author=row[2])
+    return None
 
 def search_highlights(conn, query):
+    from app.models import Highlight, Book
     cursor = conn.cursor()
     like_query = f'%{query}%'
     cursor.execute("""
-        SELECT h.id, h.highlight_type, h.page, h.location, h.date_added, h.quote, b.title, b.author
+        SELECT h.id, h.highlight_type, h.page, h.location, h.date_added, h.quote, b.id, b.title, b.author
         FROM highlights h
         JOIN books b ON h.book_id = b.id
         WHERE h.quote LIKE ? OR b.title LIKE ? OR b.author LIKE ?
         ORDER BY h.date_added DESC
     """, (like_query, like_query, like_query))
-    return cursor.fetchall()
+    results = cursor.fetchall()
+    
+    search_results = []
+    for row in results:
+        highlight = Highlight(
+            id=row[0],
+            book_id=row[6],  # b.id
+            highlight_type=row[1],
+            page=row[2],
+            location=row[3],
+            date_added=row[4],
+            quote=row[5]
+        )
+        book = Book(id=row[6], title=row[7], author=row[8])
+        search_results.append((highlight, book))
+    
+    return search_results
 
 def insert_book(conn, title, author):
     cursor = conn.cursor()

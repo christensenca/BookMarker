@@ -1,5 +1,5 @@
 import pytest
-from parser import parse_book_author, parse_highlight_info, parse_quote, parse_clippings, ParsedEntry
+from parser import parse_book_author, parse_highlight_info, parse_quote, parse_clippings
 import datetime
 
 def test_parse_book_author_with_author():
@@ -43,14 +43,14 @@ Churchill asked him to sit down, apologized, offered him a drink and thereafter 
 =========="""
     parsed = parse_clippings(text)
     assert len(parsed) == 1
-    entry = parsed[0]
-    assert entry.book == "Churchill"
-    assert entry.author == "Roberts, Andrew"
-    assert entry.highlight_type == "Highlight"
-    assert entry.page == 285
-    assert entry.location == "6982-6984"
-    assert entry.date_added == datetime.datetime(2024, 11, 10, 11, 21, 35).isoformat()
-    assert "Churchill asked him to sit down" in entry.quote
+    book, highlight = parsed[0]
+    assert book.title == "Churchill"
+    assert book.author == "Roberts, Andrew"
+    assert highlight.highlight_type == "Highlight"
+    assert highlight.page == 285
+    assert highlight.location == "6982-6984"
+    assert highlight.date_added == datetime.datetime(2024, 11, 10, 11, 21, 35).isoformat()
+    assert "Churchill asked him to sit down" in highlight.quote
 
 def test_parse_clippings_multiple_entries():
     text = """Churchill (Roberts, Andrew)
@@ -65,5 +65,7 @@ Second quote.
 =========="""
     parsed = parse_clippings(text)
     assert len(parsed) == 2
-    assert parsed[0].book == "Churchill"
-    assert parsed[1].book == "Never Split the Difference"
+    book1, highlight1 = parsed[0]
+    book2, highlight2 = parsed[1]
+    assert book1.title == "Churchill"
+    assert book2.title == "Never Split the Difference"

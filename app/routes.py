@@ -21,13 +21,13 @@ def index():
     
     if query:
         # Search mode
-        highlights_raw = search_highlights(conn, query)
+        search_results = search_highlights(conn, query)
         highlights = []
-        for h in highlights_raw:
-            highlighted_quote = highlight_text(h[5], query)
-            highlighted_title = highlight_text(h[6], query)
-            highlighted_author = highlight_text(h[7], query)
-            highlights.append((h[0], h[1], h[2], h[3], h[4], highlighted_quote, highlighted_title, highlighted_author))
+        for highlight, book in search_results:
+            highlighted_quote = highlight_text(highlight.quote, query)
+            highlighted_title = highlight_text(book.title, query)
+            highlighted_author = highlight_text(book.author, query)
+            highlights.append((highlight, book, highlighted_quote, highlighted_title, highlighted_author))
         selected_book = None
     elif selected_book_id:
         highlights = get_highlights_for_book(conn, selected_book_id)

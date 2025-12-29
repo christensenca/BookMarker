@@ -7,6 +7,8 @@ class Book:
     title: str
     author: str
     id: Optional[int] = None
+    highlight_count: Optional[int] = None
+    last_highlight_date: Optional[str] = None
 
 @dataclass
 class Highlight:
