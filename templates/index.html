@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookMarker</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+        .container { display: flex; }
+        .sidebar { width: 300px; background: #f4f4f4; padding: 10px; height: 100vh; overflow-y: auto; }
+        .sidebar h2 { margin-top: 0; }
+        .book { margin-bottom: 10px; padding: 5px; border: 1px solid #ccc; cursor: pointer; }
+        .book:hover { background: #e0e0e0; }
+        .main { flex: 1; padding: 10px; }
+        .highlight { margin-bottom: 20px; padding: 10px; border-left: 4px solid #007bff; background: #f8f9fa; }
+        .highlight .meta { font-size: 0.9em; color: #666; }
+        .search-form { margin-bottom: 20px; }
+        mark { background: yellow; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Books</h2>
+            {% for book in books %}
+            <div class="book">
+                <a href="?book_id={{ book[0] }}" style="text-decoration: none; color: inherit;">
+                    <strong>{{ book[1] }}</strong><br>
+                    by {{ book[2] }}<br>
+                    Highlights: {{ book[3] }}<br>
+                    Last: {{ book[4] or 'N/A' }}
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="main">
+            <div class="search-form">
+                <form method="get">
+                    <input type="text" name="q" value="{{ query }}" placeholder="Search highlights, titles, authors..." style="width: 70%; padding: 5px;">
+                    <button type="submit" style="padding: 5px 10px;">Search</button>
+                    {% if query %}<a href="/" style="margin-left: 10px;">Clear</a>{% endif %}
+                </form>
+            </div>
+            {% if query %}
+            <h1>Search Results for "{{ query }}"</h1>
+            {% if highlights %}
+            {% for highlight in highlights %}
+            <div class="highlight">
+                <div class="meta">
+                    <strong>{{ highlight[6] }}</strong> by {{ highlight[7] }}<br>
+                    Type: {{ highlight[1] }} | Location: {{ highlight[3] }} | Date: {{ highlight[4] }}
+                    {% if highlight[2] %} | Page: {{ highlight[2] }}{% endif %}
+                </div>
+                <p>{{ highlight[5] | safe }}</p>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>No results found.</p>
+            {% endif %}
+            {% elif selected_book %}
+            <h1>{{ selected_book[1] }}</h1>
+            <h2>by {{ selected_book[2] }}</h2>
+            {% for highlight in highlights %}
+            <div class="highlight">
+                <div class="meta">
+                    Type: {{ highlight[1] }} | Location: {{ highlight[3] }} | Date: {{ highlight[4] }}
+                    {% if highlight[2] %} | Page: {{ highlight[2] }}{% endif %}
+                </div>
+                <p>{{ highlight[5] }}</p>
+            </div>
+            {% endfor %}
+            {% else %}
+            <h1>Select a book from the sidebar or search</h1>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

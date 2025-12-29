@@ -1,0 +1,166 @@
+import pytest
+import sqlite3
+from database import (
+    create_tables, get_last_import_date, set_last_import_date,
+    get_books_with_stats, get_highlights_for_book, get_book_by_id, search_highlights,
+    insert_book, insert_highlight
+)
+
+@pytest.fixture
+def conn():
+    conn = sqlite3.connect(':memory:')
+    create_tables(conn)
+    yield conn
+    conn.close()
+
+def test_create_tables(conn):
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    tables = [row[0] for row in cursor.fetchall()]
+    expected_tables = ['books', 'highlights', 'tags', 'highlight_tags', 'import_metadata']
+    for table in expected_tables:
+        assert table in tables
+
+def test_get_set_last_import_date(conn):
+    # Initially None
+    assert get_last_import_date(conn) is None
+    
+    # Set a date
+    date_str = "2024-11-10T11:21:35"
+    set_last_import_date(conn, date_str)
+    assert get_last_import_date(conn) == date_str
+    
+    # Update
+    new_date = "2024-12-01T00:00:00"
+    set_last_import_date(conn, new_date)
+    assert get_last_import_date(conn) == new_date
+
+def test_get_books_with_stats_empty(conn):
+    books = get_books_with_stats(conn)
+    assert books == []
+
+def test_get_books_with_stats_with_data(conn):
+    cursor = conn.cursor()
+    # Insert a book
+    cursor.execute("INSERT INTO books (title, author) VALUES (?, ?)", ("Test Book", "Test Author"))
+    book_id = cursor.lastrowid
+    
+    # Insert highlights
+    cursor.execute("""
+        INSERT INTO highlights (book_id, highlight_type, page, location, date_added, quote)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (book_id, "Highlight", 10, "100-102", "2024-11-10T11:21:35", "Test quote"))
+    
+    cursor.execute("""
+        INSERT INTO highlights (book_id, highlight_type, page, location, date_added, quote)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (book_id, "Note", None, "200-201", "2024-11-11T12:00:00", "Another quote"))
+    
+    conn.commit()
+    
+    books = get_books_with_stats(conn)
+    assert len(books) == 1
+    book = books[0]
+    assert book[0] == book_id  # id
+    assert book[1] == "Test Book"  # title
+    assert book[2] == "Test Author"  # author
+    assert book[3] == 2  # highlight_count
+    assert book[4] == "2024-11-11T12:00:00"  # last_highlight_date
+
+def test_get_highlights_for_book(conn):
+    cursor = conn.cursor()
+    # Insert book
+    cursor.execute("INSERT INTO books (title, author) VALUES (?, ?)", ("Book", "Author"))
+    book_id = cursor.lastrowid
+    
+    # Insert highlights
+    cursor.execute("""
+        INSERT INTO highlights (book_id, highlight_type, page, location, date_added, quote)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (book_id, "Highlight", 5, "50-52", "2024-01-01T00:00:00", "First"))
+    cursor.execute("""
+        INSERT INTO highlights (book_id, highlight_type, page, location, date_added, quote)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (book_id, "Note", 10, "100-101", "2024-01-02T00:00:00", "Second"))
+    conn.commit()
+    
+    highlights = get_highlights_for_book(conn, book_id)
+    assert len(highlights) == 2
+    # Should be ordered by date_added DESC
+    assert highlights[0][5] == "Second"  # quote
+    assert highlights[1][5] == "First"
+
+def test_get_book_by_id(conn):
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO books (title, author) VALUES (?, ?)", ("Title", "Author"))
+    book_id = cursor.lastrowid
+    conn.commit()
+    
+    book = get_book_by_id(conn, book_id)
+    assert book == (book_id, "Title", "Author")
+    
+    # Non-existent
+    assert get_book_by_id(conn, 999) is None
+
+def test_search_highlights(conn):
+    cursor = conn.cursor()
+    # Insert book
+    cursor.execute("INSERT INTO books (title, author) VALUES (?, ?)", ("Search Book", "Search Author"))
+    book_id = cursor.lastrowid
+    
+    # Insert highlight
+    cursor.execute("""
+        INSERT INTO highlights (book_id, highlight_type, page, location, date_added, quote)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (book_id, "Highlight", 1, "1-2", "2024-01-01T00:00:00", "This is a searchable quote"))
+    conn.commit()
+    
+    # Search in quote
+    results = search_highlights(conn, "searchable")
+    assert len(results) == 1
+    assert results[0][5] == "This is a searchable quote"  # quote
+    assert results[0][6] == "Search Book"  # title
+    assert results[0][7] == "Search Author"  # author
+    
+    # Search in title
+    results = search_highlights(conn, "Book")
+    assert len(results) == 1
+    
+    # No match
+    results = search_highlights(conn, "nonexistent")
+    assert results == []
+
+def test_insert_book_new(conn):
+    book_id = insert_book(conn, "New Book", "New Author")
+    assert book_id is not None
+    # Check it was inserted
+    book = get_book_by_id(conn, book_id)
+    assert book == (book_id, "New Book", "New Author")
+
+def test_insert_book_existing(conn):
+    # Insert first time
+    book_id1 = insert_book(conn, "Existing Book", "Existing Author")
+    # Insert again
+    book_id2 = insert_book(conn, "Existing Book", "Existing Author")
+    assert book_id1 == book_id2
+
+def test_insert_highlight(conn):
+    book_id = insert_book(conn, "Book for Highlight", "Author")
+    highlight_id = insert_highlight(conn, book_id, "Highlight", 5, "10-12", "2024-01-01T00:00:00", "Quote text")
+    assert highlight_id is not None
+    
+    # Check highlights
+    highlights = get_highlights_for_book(conn, book_id)
+    assert len(highlights) == 1
+    assert highlights[0][1] == "Highlight"  # type
+    assert highlights[0][5] == "Quote text"  # quote
+
+def test_insert_highlight_duplicate(conn):
+    book_id = insert_book(conn, "Book Dup", "Author Dup")
+    # Insert first
+    insert_highlight(conn, book_id, "Highlight", 5, "10-12", "2024-01-01T00:00:00", "Quote")
+    # Insert duplicate (same book_id and location)
+    highlight_id2 = insert_highlight(conn, book_id, "Highlight", 5, "10-12", "2024-01-01T00:00:00", "Quote")
+    # Should be ignored, so still one
+    highlights = get_highlights_for_book(conn, book_id)
+    assert len(highlights) == 1
