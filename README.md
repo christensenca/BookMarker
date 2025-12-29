@@ -157,5 +157,4 @@ For issues or questions:
 
 ---
 
-**Note**: This app is designed for personal use with Kindle highlights. Make sure your clippings file is from a Kindle device or app.</content>
-<parameter name="filePath">/Users/cadechristensen/Source/BookMarker/README.md
+**Note**: This app is designed for personal use with Kindle highlights. Make sure your clippings file is from a Kindle device or app.
