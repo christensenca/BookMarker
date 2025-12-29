@@ -1,7 +1,7 @@
 import sys
 from database import create_tables, get_last_import_date, set_last_import_date, insert_book, insert_highlight
 from parser import parse_clippings
-from models import Book, Highlight
+from app.models import Book, Highlight
 from config import DB_PATH, CLIPPINGS_FILE
 import sqlite3
 import datetime

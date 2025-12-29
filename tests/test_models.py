@@ -1,5 +1,5 @@
 import pytest
-from models import Book, Highlight, Tag, HighlightTag
+from app.models import Book, Highlight, Tag, HighlightTag
 
 def test_book_creation():
     book = Book(title="Test Title", author="Test Author", id=1)

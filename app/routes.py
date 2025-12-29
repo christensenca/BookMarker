@@ -1,10 +1,9 @@
-from flask import Flask, render_template, request
+from flask import render_template, request
+from app import app
 import sqlite3
 import re
 from database import get_books_with_stats, get_highlights_for_book, get_book_by_id, search_highlights
 from config import DB_PATH
-
-app = Flask(__name__)
 
 def highlight_text(text, query):
     if not query:
@@ -39,6 +38,3 @@ def index():
     
     conn.close()
     return render_template('index.html', books=books, highlights=highlights, selected_book=selected_book, query=query)
-
-if __name__ == '__main__':
-    app.run(debug=True)

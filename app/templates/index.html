@@ -4,19 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BookMarker</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        .container { display: flex; }
-        .sidebar { width: 300px; background: #f4f4f4; padding: 10px; height: 100vh; overflow-y: auto; }
-        .sidebar h2 { margin-top: 0; }
-        .book { margin-bottom: 10px; padding: 5px; border: 1px solid #ccc; cursor: pointer; }
-        .book:hover { background: #e0e0e0; }
-        .main { flex: 1; padding: 10px; }
-        .highlight { margin-bottom: 20px; padding: 10px; border-left: 4px solid #007bff; background: #f8f9fa; }
-        .highlight .meta { font-size: 0.9em; color: #666; }
-        .search-form { margin-bottom: 20px; }
-        mark { background: yellow; }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container">
