@@ -1,4 +1,5 @@
 import sqlite3
+from app.models import Book, Highlight
 
 def create_tables(conn):
     cursor = conn.cursor()
@@ -68,7 +69,6 @@ def set_last_import_date(conn, date_str):
 
 
 def get_books_with_stats(conn):
-    from app.models import Book
     cursor = conn.cursor()
     cursor.execute("""
         SELECT b.id, b.title, b.author, COUNT(h.id) as highlight_count, MAX(h.date_added) as last_highlight_date
@@ -93,7 +93,6 @@ def get_books_with_stats(conn):
     return books
 
 def get_highlights_for_book(conn, book_id):
-    from app.models import Highlight
     cursor = conn.cursor()
     cursor.execute("""
         SELECT h.id, h.highlight_type, h.page, h.location, h.date_added, h.quote
@@ -119,7 +118,6 @@ def get_highlights_for_book(conn, book_id):
     return highlights
 
 def get_book_by_id(conn, book_id):
-    from app.models import Book
     cursor = conn.cursor()
     cursor.execute("SELECT id, title, author FROM books WHERE id = ?", (book_id,))
     row = cursor.fetchone()
@@ -128,7 +126,6 @@ def get_book_by_id(conn, book_id):
     return None
 
 def search_highlights(conn, query):
-    from app.models import Highlight, Book
     cursor = conn.cursor()
     like_query = f'%{query}%'
     cursor.execute("""
