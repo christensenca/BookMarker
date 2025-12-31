@@ -4,63 +4,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BookMarker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <div class="sidebar">
-            <h2>Books</h2>
-            {% for book in books %}
-            <div class="book">
-                <a href="?book_id={{ book.id }}" style="text-decoration: none; color: inherit;">
-                    <strong>{{ book.title }}</strong><br>
-                    by {{ book.author }}<br>
-                    Highlights: {{ book.highlight_count }}<br>
-                    Last: {{ book.last_highlight_date or 'N/A' }}
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-        <div class="main">
-            <div class="search-form">
-                <form method="get">
-                    <input type="text" name="q" value="{{ query }}" placeholder="Search highlights, titles, authors..." style="width: 70%; padding: 5px;">
-                    <button type="submit" style="padding: 5px 10px;">Search</button>
-                    {% if query %}<a href="/" style="margin-left: 10px;">Clear</a>{% endif %}
-                </form>
-            </div>
-            {% if query %}
-            <h1>Search Results for "{{ query }}"</h1>
-            {% if highlights %}
-            {% for highlight, book, highlighted_quote, highlighted_title, highlighted_author in highlights %}
-            <div class="highlight">
-                <div class="meta">
-                    <strong>{{ highlighted_title }}</strong> by {{ highlighted_author }}<br>
-                    Type: {{ highlight.highlight_type }} | Location: {{ highlight.location }} | Date: {{ highlight.date_added }}
-                    {% if highlight.page %} | Page: {{ highlight.page }}{% endif %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3 bg-light p-3" style="height: 100vh; overflow-y: auto;">
+                <h2>Books</h2>
+                <div class="list-group">
+                    {% for book in books %}
+                    <a href="?book_id={{ book.id }}" class="list-group-item list-group-item-action">
+                        <strong>{{ book.title }}</strong><br>
+                        <small>by {{ book.author }}</small><br>
+                        <small>Highlights: {{ book.highlight_count }}</small><br>
+                        <small>Last: {{ book.last_highlight_date or 'N/A' }}</small>
+                    </a>
+                    {% endfor %}
                 </div>
-                <p>{{ highlighted_quote | safe }}</p>
             </div>
-            {% endfor %}
-            {% else %}
-            <p>No results found.</p>
-            {% endif %}
-            {% elif selected_book %}
-            <h1>{{ selected_book.title }}</h1>
-            <h2>by {{ selected_book.author }}</h2>
-            {% for highlight in highlights %}
-            <div class="highlight">
-                <div class="meta">
-                    Type: {{ highlight.highlight_type }} | Location: {{ highlight.location }} | Date: {{ highlight.date_added }}
-                    {% if highlight.page %} | Page: {{ highlight.page }}{% endif %}
+            <div class="col-md-9 p-3">
+                <div class="mb-4">
+                    <form method="get" class="d-flex">
+                        <input type="text" name="q" value="{{ query }}" placeholder="Search highlights, titles, authors..." class="form-control me-2">
+                        <button type="submit" class="btn btn-primary">Search</button>
+                        {% if query %}<a href="/" class="btn btn-secondary ms-2">Clear</a>{% endif %}
+                    </form>
                 </div>
-                <p>{{ highlight.quote }}</p>
+                {% if query %}
+                <h1>Search Results for "{{ query }}"</h1>
+                {% if highlights %}
+                <div class="row">
+                    {% for highlight, book, highlighted_quote, highlighted_title, highlighted_author in highlights %}
+                    <div class="col-md-12 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ highlighted_title }} by {{ highlighted_author }}</h5>
+                                <p class="card-text">{{ highlighted_quote | safe }}</p>
+                                <small class="text-muted">Type: {{ highlight.highlight_type }} | Location: {{ highlight.location }} | Date: {{ highlight.date_added }}{% if highlight.page %} | Page: {{ highlight.page }}{% endif %}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p>No results found.</p>
+                {% endif %}
+                {% elif selected_book %}
+                <h1>{{ selected_book.title }}</h1>
+                <h2>by {{ selected_book.author }}</h2>
+                <div class="row">
+                    {% for highlight in highlights %}
+                    <div class="col-md-12 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="card-text">{{ highlight.quote }}</p>
+                                <small class="text-muted">Type: {{ highlight.highlight_type }} | Location: {{ highlight.location }} | Date: {{ highlight.date_added }}{% if highlight.page %} | Page: {{ highlight.page }}{% endif %}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <h1>Select a book from the sidebar or search</h1>
+                {% endif %}
             </div>
-            {% endfor %}
-            {% else %}
-            <h1>Select a book from the sidebar or search</h1>
-            {% endif %}
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
