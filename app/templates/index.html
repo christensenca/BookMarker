@@ -39,7 +39,7 @@
                     <div class="col-md-12 mb-3">
                         <div class="card">
                             <div class="card-body">
-                                <h5 class="card-title">{{ highlighted_title }} by {{ highlighted_author }}</h5>
+                                <h5 class="card-title">{{ highlighted_title | safe }} by {{ highlighted_author | safe }}</h5>
                                 <p class="card-text">{{ highlighted_quote | safe }}</p>
                                 <small class="text-muted">Type: {{ highlight.highlight_type }} | Location: {{ highlight.location }} | Date: {{ highlight.date_added }}{% if highlight.page %} | Page: {{ highlight.page }}{% endif %}</small>
                             </div>
