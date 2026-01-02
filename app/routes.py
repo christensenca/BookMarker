@@ -2,7 +2,7 @@ from flask import render_template, request
 from app import app
 import sqlite3
 import re
-from database import get_books_with_stats, get_highlights_for_book, get_book_by_id, search_highlights
+from database import get_books_with_stats, get_highlights_for_book, get_book_by_id, search_highlights, get_all_tags, get_tag_by_id, insert_tag, update_tag, delete_tag
 from config import DB_PATH
 
 def highlight_text(text, query):
@@ -38,3 +38,26 @@ def index():
     
     conn.close()
     return render_template('index.html', books=books, highlights=highlights, selected_book=selected_book, query=query)
+
+@app.route('/tags', methods=['GET', 'POST'])
+def tags():
+    conn = sqlite3.connect(DB_PATH)
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'add':
+            name = request.form.get('name', '').strip()
+            if name:
+                insert_tag(conn, name)
+        elif action == 'update':
+            tag_id = request.form.get('tag_id', type=int)
+            name = request.form.get('name', '').strip()
+            if tag_id and name:
+                update_tag(conn, tag_id, name)
+        elif action == 'delete':
+            tag_id = request.form.get('tag_id', type=int)
+            if tag_id:
+                delete_tag(conn, tag_id)
+    
+    tags_list = get_all_tags(conn)
+    conn.close()
+    return render_template('tags.html', tags=tags_list)

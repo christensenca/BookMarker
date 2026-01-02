@@ -3,7 +3,7 @@ import sqlite3
 from database import (
     create_tables, get_last_import_date, set_last_import_date,
     get_books_with_stats, get_highlights_for_book, get_book_by_id, search_highlights,
-    insert_book, insert_highlight
+    insert_book, insert_highlight, get_all_tags, get_tag_by_id, insert_tag, update_tag, delete_tag
 )
 
 @pytest.fixture
@@ -169,3 +169,65 @@ def test_insert_highlight_duplicate(conn):
     # Should be ignored, so still one
     highlights = get_highlights_for_book(conn, book_id)
     assert len(highlights) == 1
+
+def test_get_all_tags_empty(conn):
+    tags = get_all_tags(conn)
+    assert tags == []
+
+def test_insert_tag(conn):
+    tag_id = insert_tag(conn, "Test Tag")
+    assert tag_id is not None
+    
+    tags = get_all_tags(conn)
+    assert len(tags) == 1
+    assert tags[0].name == "Test Tag"
+
+def test_insert_tag_duplicate(conn):
+    insert_tag(conn, "Duplicate Tag")
+    tag_id2 = insert_tag(conn, "Duplicate Tag")
+    assert tag_id2 is None  # Should fail due to unique constraint
+    
+    tags = get_all_tags(conn)
+    assert len(tags) == 1
+
+def test_get_tag_by_id(conn):
+    tag_id = insert_tag(conn, "Find Me")
+    tag = get_tag_by_id(conn, tag_id)
+    assert tag is not None
+    assert tag.name == "Find Me"
+    
+    # Non-existent
+    tag_none = get_tag_by_id(conn, 999)
+    assert tag_none is None
+
+def test_update_tag(conn):
+    tag_id = insert_tag(conn, "Old Name")
+    success = update_tag(conn, tag_id, "New Name")
+    assert success
+    
+    tag = get_tag_by_id(conn, tag_id)
+    assert tag.name == "New Name"
+
+def test_update_tag_duplicate_name(conn):
+    insert_tag(conn, "Existing")
+    tag_id2 = insert_tag(conn, "Another")
+    success = update_tag(conn, tag_id2, "Existing")  # Try to rename to existing
+    assert not success
+    
+    tag = get_tag_by_id(conn, tag_id2)
+    assert tag.name == "Another"  # Should remain unchanged
+
+def test_delete_tag(conn):
+    tag_id = insert_tag(conn, "To Delete")
+    tags_before = get_all_tags(conn)
+    assert len(tags_before) == 1
+    
+    success = delete_tag(conn, tag_id)
+    assert success
+    
+    tags_after = get_all_tags(conn)
+    assert len(tags_after) == 0
+    
+    # Delete non-existent
+    success2 = delete_tag(conn, 999)
+    assert not success2

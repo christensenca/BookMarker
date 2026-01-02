@@ -1,5 +1,5 @@
 import sqlite3
-from app.models import Book, Highlight
+from app.models import Book, Highlight, Tag
 
 def create_tables(conn):
     cursor = conn.cursor()
@@ -171,6 +171,53 @@ def insert_highlight(conn, book_id, highlight_type, page, location, date_added, 
         VALUES (?, ?, ?, ?, ?, ?)
     """, (book_id, highlight_type, page, location, date_added, quote))
     return cursor.lastrowid
+
+# Tag functions
+def get_all_tags(conn):
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name FROM tags ORDER BY name")
+    results = cursor.fetchall()
+    
+    tags = []
+    for row in results:
+        tag = Tag(id=row[0], name=row[1])
+        tags.append(tag)
+    
+    return tags
+
+def get_tag_by_id(conn, tag_id):
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name FROM tags WHERE id = ?", (tag_id,))
+    row = cursor.fetchone()
+    if row:
+        return Tag(id=row[0], name=row[1])
+    return None
+
+def insert_tag(conn, name):
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO tags (name) VALUES (?)", (name,))
+        conn.commit()
+        return cursor.lastrowid
+    except sqlite3.IntegrityError:
+        # Tag name already exists
+        return None
+
+def update_tag(conn, tag_id, name):
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE tags SET name = ? WHERE id = ?", (name, tag_id))
+        conn.commit()
+        return cursor.rowcount > 0
+    except sqlite3.IntegrityError:
+        # Name conflict
+        return False
+
+def delete_tag(conn, tag_id):
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM tags WHERE id = ?", (tag_id,))
+    conn.commit()
+    return cursor.rowcount > 0
 
 
 if __name__ == '__main__':
