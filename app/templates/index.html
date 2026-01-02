@@ -18,7 +18,7 @@
                         <strong>{{ book.title }}</strong><br>
                         <small>by {{ book.author }}</small><br>
                         <small>Highlights: {{ book.highlight_count }}</small><br>
-                        <small>Last: {{ book.last_highlight_date or 'N/A' }}</small>
+                        <small>Last: {% if book.last_highlight_date %}{% set date_str = book.last_highlight_date %}{% set year = date_str[0:4] %}{% set month = date_str[5:7] %}{% set day = date_str[8:10] %}{% set month_names = {'01':'Jan', '02':'Feb', '03':'Mar', '04':'Apr', '05':'May', '06':'Jun', '07':'Jul', '08':'Aug', '09':'Sep', '10':'Oct', '11':'Nov', '12':'Dec'} %}{{ day }} {{ month_names[month] }} {{ year }}{% else %}N/A{% endif %}</small>
                     </a>
                     {% endfor %}
                 </div>
@@ -41,7 +41,7 @@
                             <div class="card-body">
                                 <h5 class="card-title">{{ highlighted_title | safe }} by {{ highlighted_author | safe }}</h5>
                                 <p class="card-text">{{ highlighted_quote | safe }}</p>
-                                <small class="text-muted">Type: {{ highlight.highlight_type }} | Location: {{ highlight.location }} | Date: {{ highlight.date_added }}{% if highlight.page %} | Page: {{ highlight.page }}{% endif %}</small>
+                                <small class="text-muted">Type: {{ highlight.highlight_type }} | Location: {{ highlight.location }} | Date: {% if highlight.date_added %}{% set date_str = highlight.date_added %}{% set year = date_str[0:4] %}{% set month = date_str[5:7] %}{% set day = date_str[8:10] %}{% set month_names = {'01':'Jan', '02':'Feb', '03':'Mar', '04':'Apr', '05':'May', '06':'Jun', '07':'Jul', '08':'Aug', '09':'Sep', '10':'Oct', '11':'Nov', '12':'Dec'} %}{{ day }} {{ month_names[month] }} {{ year }}{% else %}N/A{% endif %}{% if highlight.page %} | Page: {{ highlight.page }}{% endif %}</small>
                             </div>
                         </div>
                     </div>
@@ -59,7 +59,7 @@
                         <div class="card">
                             <div class="card-body">
                                 <p class="card-text">{{ highlight.quote }}</p>
-                                <small class="text-muted">Type: {{ highlight.highlight_type }} | Location: {{ highlight.location }} | Date: {{ highlight.date_added }}{% if highlight.page %} | Page: {{ highlight.page }}{% endif %}</small>
+                                <small class="text-muted">Type: {{ highlight.highlight_type }} | Location: {{ highlight.location }} | Date: {% if highlight.date_added %}{% set date_str = highlight.date_added %}{% set year = date_str[0:4] %}{% set month = date_str[5:7] %}{% set day = date_str[8:10] %}{% set month_names = {'01':'Jan', '02':'Feb', '03':'Mar', '04':'Apr', '05':'May', '06':'Jun', '07':'Jul', '08':'Aug', '09':'Sep', '10':'Oct', '11':'Nov', '12':'Dec'} %}{{ day }} {{ month_names[month] }} {{ year }}{% else %}N/A{% endif %}{% if highlight.page %} | Page: {{ highlight.page }}{% endif %}</small>
                             </div>
                         </div>
                     </div>
