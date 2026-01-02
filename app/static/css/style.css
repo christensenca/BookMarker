@@ -1,1 +1,39 @@
 mark { background: yellow; }
+
+/* Custom styles for enhanced aesthetics */
+.navbar-brand {
+    font-weight: bold;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+
+.border-end {
+    border-right: 1px solid #dee2e6 !important;
+}
