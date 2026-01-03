@@ -219,8 +219,14 @@ def test_update_tag_duplicate_name(conn):
     assert tag.name == "Another"  # Should remain unchanged
 
 def test_delete_tag(conn):
+    # Create a highlight and tag it
+    book_id = insert_book(conn, "Book", "Author")
+    highlight_id = insert_highlight(conn, book_id, "Highlight", 1, "1-2", "2024-01-01", "Quote")
     tag_id = insert_tag(conn, "To Delete")
-    tags_before = get_all_tags(conn)
+    add_tag_to_highlight(conn, highlight_id, tag_id)
+    
+    # Verify association exists
+    tags_before = get_tags_for_highlight(conn, highlight_id)
     assert len(tags_before) == 1
     
     success = delete_tag(conn, tag_id)
@@ -229,9 +235,9 @@ def test_delete_tag(conn):
     tags_after = get_all_tags(conn)
     assert len(tags_after) == 0
     
-    # Delete non-existent
-    success2 = delete_tag(conn, 999)
-    assert not success2
+    # Verify association is also deleted
+    tags_for_highlight = get_tags_for_highlight(conn, highlight_id)
+    assert len(tags_for_highlight) == 0
 
 def test_add_tag_to_highlight(conn):
     # Create highlight

@@ -215,9 +215,12 @@ def update_tag(conn, tag_id, name):
 
 def delete_tag(conn, tag_id):
     cursor = conn.cursor()
+    # First delete all associations
+    cursor.execute("DELETE FROM highlight_tags WHERE tag_id = ?", (tag_id,))
+    # Then delete the tag
     cursor.execute("DELETE FROM tags WHERE id = ?", (tag_id,))
     conn.commit()
-    return cursor.rowcount > 0
+    return cursor.rowcount > 0  # This will be True if the tag was deleted
 
 # Highlight-Tag functions
 def get_tags_for_highlight(conn, highlight_id):
