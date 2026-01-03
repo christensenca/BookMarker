@@ -219,9 +219,63 @@ def delete_tag(conn, tag_id):
     conn.commit()
     return cursor.rowcount > 0
 
+# Highlight-Tag functions
+def get_tags_for_highlight(conn, highlight_id):
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT t.id, t.name
+        FROM tags t
+        JOIN highlight_tags ht ON t.id = ht.tag_id
+        WHERE ht.highlight_id = ?
+        ORDER BY t.name
+    """, (highlight_id,))
+    results = cursor.fetchall()
+    tags = []
+    for row in results:
+        tag = Tag(id=row[0], name=row[1])
+        tags.append(tag)
+    return tags
 
-if __name__ == '__main__':
-    conn = sqlite3.connect('bookmarker.db')
-    create_tables(conn)
-    conn.close()
+def add_tag_to_highlight(conn, highlight_id, tag_id):
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO highlight_tags (highlight_id, tag_id) VALUES (?, ?)", (highlight_id, tag_id))
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        # Already exists
+        return False
+
+def remove_tag_from_highlight(conn, highlight_id, tag_id):
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM highlight_tags WHERE highlight_id = ? AND tag_id = ?", (highlight_id, tag_id))
+    conn.commit()
+    return cursor.rowcount > 0
+
+def get_highlights_for_book_with_tags(conn, book_id):
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT h.id, h.highlight_type, h.page, h.location, h.date_added, h.quote
+        FROM highlights h
+        WHERE h.book_id = ?
+        ORDER BY h.date_added DESC
+    """, (book_id,))
+    results = cursor.fetchall()
+    
+    highlights = []
+    for row in results:
+        highlight = Highlight(
+            id=row[0],
+            book_id=book_id,
+            highlight_type=row[1],
+            page=row[2],
+            location=row[3],
+            date_added=row[4],
+            quote=row[5]
+        )
+        # Add tags
+        highlight.tags = get_tags_for_highlight(conn, highlight.id)
+        highlights.append(highlight)
+    
+    return highlights
     
