@@ -2,8 +2,10 @@ from flask import render_template, request, jsonify
 from app import app
 import sqlite3
 import re
-from database import get_books_with_stats, get_highlights_for_book, get_book_by_id, search_highlights, get_all_tags, get_tag_by_id, insert_tag, update_tag, delete_tag, get_highlights_for_book_with_tags, add_tag_to_highlight, remove_tag_from_highlight, get_tags_for_highlight, get_highlights_for_tag
+from database import get_books_with_stats, get_highlights_for_book, get_book_by_id, search_highlights, get_all_tags, get_tag_by_id, insert_tag, update_tag, delete_tag, get_highlights_for_book_with_tags, add_tag_to_highlight, remove_tag_from_highlight, get_tags_for_highlight, get_highlights_for_tag, get_last_import_date, set_last_import_date, insert_book, insert_highlight
 from config import DB_PATH
+import datetime
+from parser import parse_clippings
 
 def highlight_text(text, query):
     if not query:
@@ -126,3 +128,35 @@ def tags():
     all_tags = get_all_tags(conn)
     conn.close()
     return render_template('tags.html', tags=tags_list, highlights=highlights, selected_tag=selected_tag, all_tags=all_tags)
+
+@app.route('/imports', methods=['GET', 'POST'])
+def imports():
+    conn = sqlite3.connect(DB_PATH)
+    last_import_date = get_last_import_date(conn)
+    processed_count = 0
+    total_parsed = 0
+    message = None
+    
+    if request.method == 'POST':
+        file = request.files.get('clippings_file')
+        if file and file.filename:
+            text = file.read().decode('utf-8-sig')
+            parsed_entries = parse_clippings(text)
+            total_parsed = len(parsed_entries)
+            if last_import_date:
+                parsed_entries = [e for e in parsed_entries if not e[1].date_added or e[1].date_added > last_import_date]
+            
+            for book, highlight in parsed_entries:
+                book_id = insert_book(conn, book.title, book.author)
+                insert_highlight(conn, book_id, highlight.highlight_type, highlight.page, highlight.location, highlight.date_added, highlight.quote)
+            
+            processed_count = len(parsed_entries)
+            now_iso = datetime.datetime.now().isoformat()
+            set_last_import_date(conn, now_iso)
+            message = f"Parsed {total_parsed} highlights, imported {processed_count} new highlights."
+            last_import_date = now_iso  # Update for display
+        else:
+            message = "No file selected."
+    
+    conn.close()
+    return render_template('imports.html', last_import_date=last_import_date, processed_count=processed_count, total_parsed=total_parsed, message=message)

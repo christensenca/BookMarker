@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Imports - BookMarker{% endblock %}</title>
+</head>
+<body>
+    {% extends "base.html" %}
+
+    {% block content %}
+    <div class="container mt-4">
+        <h1><i class="bi bi-upload"></i> Import Highlights</h1>
+        
+        {% if last_import_date %}
+            <p>Last import: {% set date_str = last_import_date %}{% set year = date_str[0:4] %}{% set month = date_str[5:7] %}{% set day = date_str[8:10] %}{% set month_names = {'01':'Jan', '02':'Feb', '03':'Mar', '04':'Apr', '05':'May', '06':'Jun', '07':'Jul', '08':'Aug', '09':'Sep', '10':'Oct', '11':'Nov', '12':'Dec'} %}{{ day }} {{ month_names[month] }} {{ year }}</p>
+        {% else %}
+            <p>No previous imports.</p>
+        {% endif %}
+        
+        {% if message %}
+            <div class="alert alert-info">{{ message }}</div>
+        {% endif %}
+        
+        <form method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="clippings_file" class="form-label">Select your Kindle clippings file:</label>
+                <input type="file" class="form-control" id="clippings_file" name="clippings_file" accept=".txt">
+            </div>
+            <button type="submit" class="btn btn-primary">Import</button>
+        </form>
+    </div>
+    {% endblock %}
+</body>
+</html>
