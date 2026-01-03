@@ -4,7 +4,7 @@ from database import (
     create_tables, get_last_import_date, set_last_import_date,
     get_books_with_stats, get_highlights_for_book, get_book_by_id, search_highlights,
     insert_book, insert_highlight, get_all_tags, get_tag_by_id, insert_tag, update_tag, delete_tag,
-    get_tags_for_highlight, add_tag_to_highlight, remove_tag_from_highlight, get_highlights_for_book_with_tags
+    get_tags_for_highlight, add_tag_to_highlight, remove_tag_from_highlight, get_highlights_for_book_with_tags, get_highlights_for_tag
 )
 
 @pytest.fixture
@@ -304,3 +304,34 @@ def test_get_highlights_for_book_with_tags(conn):
     h2 = next(h for h in highlights if h.id == highlight_id2)
     assert len(h2.tags) == 1
     assert h2.tags[0].name == "Tag1"
+
+def test_get_highlights_for_tag(conn):
+    book_id1 = insert_book(conn, "Book5", "Author5")
+    book_id2 = insert_book(conn, "Book6", "Author6")
+    highlight_id1 = insert_highlight(conn, book_id1, "Highlight", 1, "1-2", "2024-01-01", "Quote1")
+    highlight_id2 = insert_highlight(conn, book_id2, "Note", 2, "3-4", "2024-01-02", "Quote2")
+    
+    tag_id1 = insert_tag(conn, "Tag3")
+    tag_id2 = insert_tag(conn, "Tag4")
+    
+    add_tag_to_highlight(conn, highlight_id1, tag_id1)
+    add_tag_to_highlight(conn, highlight_id2, tag_id1)
+    add_tag_to_highlight(conn, highlight_id2, tag_id2)
+    
+    highlights = get_highlights_for_tag(conn, tag_id1)
+    assert len(highlights) == 2
+    
+    # Check that highlights have correct book info
+    highlight1, book1 = next((h, b) for h, b in highlights if h.id == highlight_id1)
+    assert book1.title == "Book5"
+    assert book1.author == "Author5"
+    assert len(highlight1.tags) == 1
+    assert highlight1.tags[0].name == "Tag3"
+    
+    highlight2, book2 = next((h, b) for h, b in highlights if h.id == highlight_id2)
+    assert book2.title == "Book6"
+    assert book2.author == "Author6"
+    assert len(highlight2.tags) == 2
+    tag_names = [t.name for t in highlight2.tags]
+    assert "Tag3" in tag_names
+    assert "Tag4" in tag_names

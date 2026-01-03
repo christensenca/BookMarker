@@ -2,7 +2,7 @@ from flask import render_template, request, jsonify
 from app import app
 import sqlite3
 import re
-from database import get_books_with_stats, get_highlights_for_book, get_book_by_id, search_highlights, get_all_tags, get_tag_by_id, insert_tag, update_tag, delete_tag, get_highlights_for_book_with_tags, add_tag_to_highlight, remove_tag_from_highlight, get_tags_for_highlight
+from database import get_books_with_stats, get_highlights_for_book, get_book_by_id, search_highlights, get_all_tags, get_tag_by_id, insert_tag, update_tag, delete_tag, get_highlights_for_book_with_tags, add_tag_to_highlight, remove_tag_from_highlight, get_tags_for_highlight, get_highlights_for_tag
 from config import DB_PATH
 
 def highlight_text(text, query):
@@ -107,6 +107,22 @@ def tags():
             if tag_id:
                 delete_tag(conn, tag_id)
     
+    selected_tag_id = request.args.get('tag_id', type=int)
     tags_list = get_all_tags(conn)
+    
+    # Add highlight count to each tag
+    for tag in tags_list:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM highlight_tags WHERE tag_id = ?", (tag.id,))
+        tag.highlight_count = cursor.fetchone()[0]
+    
+    if selected_tag_id:
+        highlights = get_highlights_for_tag(conn, selected_tag_id)
+        selected_tag = get_tag_by_id(conn, selected_tag_id)
+    else:
+        highlights = []
+        selected_tag = None
+    
+    all_tags = get_all_tags(conn)
     conn.close()
-    return render_template('tags.html', tags=tags_list)
+    return render_template('tags.html', tags=tags_list, highlights=highlights, selected_tag=selected_tag, all_tags=all_tags)

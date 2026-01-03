@@ -281,4 +281,35 @@ def get_highlights_for_book_with_tags(conn, book_id):
         highlights.append(highlight)
     
     return highlights
+
+def get_highlights_for_tag(conn, tag_id):
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT h.id, h.highlight_type, h.page, h.location, h.date_added, h.quote, b.title, b.author
+        FROM highlights h
+        JOIN highlight_tags ht ON h.id = ht.highlight_id
+        JOIN books b ON h.book_id = b.id
+        WHERE ht.tag_id = ?
+        ORDER BY h.date_added DESC
+    """, (tag_id,))
+    results = cursor.fetchall()
+    
+    highlights = []
+    for row in results:
+        highlight = Highlight(
+            id=row[0],
+            book_id=None,  # We don't need book_id here since we're getting book info separately
+            highlight_type=row[1],
+            page=row[2],
+            location=row[3],
+            date_added=row[4],
+            quote=row[5]
+        )
+        # Add tags
+        highlight.tags = get_tags_for_highlight(conn, highlight.id)
+        # Add book info
+        book = Book(title=row[6], author=row[7])
+        highlights.append((highlight, book))
+    
+    return highlights
     

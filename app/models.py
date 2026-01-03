@@ -24,6 +24,7 @@ class Highlight:
 class Tag:
     name: str
     id: Optional[int] = None
+    highlight_count: Optional[int] = None
     
 @dataclass
 class HighlightTag:

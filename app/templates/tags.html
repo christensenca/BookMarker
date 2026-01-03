@@ -4,9 +4,9 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-md-4 p-3">
-            <h1><i class="bi bi-tags"></i> Manage Tags</h1>
+    <div class="row">
+        <div class="col-md-4 p-3 bg-light border-end" style="max-height: calc(100vh - 70px); overflow-y: auto;">
+            <h2><i class="bi bi-tags"></i> Manage Tags</h2>
             
             <!-- Add Tag Form -->
             <div class="card shadow-sm mb-4">
@@ -30,13 +30,15 @@
                             <thead>
                                 <tr>
                                     <th>Name</th>
+                                    <th>Highlights</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for tag in tags %}
                                 <tr>
-                                    <td>{{ tag.name }}</td>
+                                    <td><a href="?tag_id={{ tag.id }}" class="text-decoration-none">{{ tag.name }}</a></td>
+                                    <td>{{ tag.highlight_count }}</td>
                                     <td>
                                         <button class="btn btn-sm btn-outline-primary me-2" onclick="editTag({{ tag.id }}, '{{ tag.name }}')">Edit</button>
                                         <form method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this tag?')">
@@ -55,6 +57,55 @@
                     {% endif %}
                 </div>
             </div>
+        </div>
+        <div class="col-md-8 p-3 bg-white">
+            {% if selected_tag %}
+            <h1>Highlights tagged with "{{ selected_tag.name }}"</h1>
+            {% if highlights %}
+            <div class="row">
+                {% for highlight, book in highlights %}
+                <div class="col-md-12 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ book.title }} by {{ book.author }}</h5>
+                            <p class="card-text">{{ highlight.quote }}</p>
+                            <div class="mb-2">
+                                <span id="tag-badges-{{ highlight.id }}">
+                                {% for tag in highlight.tags %}
+                                <span class="badge" style="background-color: hsl({{ (tag.name|length * 37) % 360 }}, 70%, 60%); color: white;">{{ tag.name }} <button class="btn btn-sm btn-link text-white p-0 ms-1" onclick="removeTag({{ highlight.id }}, {{ tag.id }})">×</button></span>
+                                {% endfor %}
+                                </span>
+                                <button class="btn btn-sm btn-outline-primary ms-2" onclick="toggleTagManager({{ highlight.id }})"><i class="bi bi-plus"></i> Tags</button>
+                                <div id="tag-manager-{{ highlight.id }}" class="mt-2 border rounded p-2 bg-light" style="display: none;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <small class="text-muted">Manage Tags</small>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="toggleTagManager({{ highlight.id }})">×</button>
+                                    </div>
+                                    <input type="text" class="form-control form-control-sm mb-2" placeholder="Search tags..." onkeyup="filterTags({{ highlight.id }}, this.value)">
+                                    <div class="tag-checkboxes" id="tag-list-{{ highlight.id }}">
+                                        {% for tag in all_tags %}
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input tag-checkbox" type="checkbox" value="{{ tag.id }}" id="tag{{ highlight.id }}-{{ tag.id }}" onchange="updateTag({{ highlight.id }}, {{ tag.id }}, this.checked)">
+                                            <label class="form-check-label" for="tag{{ highlight.id }}-{{ tag.id }}">
+                                                {{ tag.name }}
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-muted">Type: {{ highlight.highlight_type }} | Location: {{ highlight.location }} | Date: {% if highlight.date_added %}{% set date_str = highlight.date_added %}{% set year = date_str[0:4] %}{% set month = date_str[5:7] %}{% set day = date_str[8:10] %}{% set month_names = {'01':'Jan', '02':'Feb', '03':'Mar', '04':'Apr', '05':'May', '06':'Jun', '07':'Jul', '08':'Aug', '09':'Sep', '10':'Oct', '11':'Nov', '12':'Dec'} %}{{ day }} {{ month_names[month] }} {{ year }}{% else %}N/A{% endif %}{% if highlight.page %} | Page: {{ highlight.page }}{% endif %}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No highlights found for this tag.</p>
+            {% endif %}
+            {% else %}
+            <h1>Select a tag from the sidebar to view highlights</h1>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -90,6 +141,84 @@ function editTag(id, name) {
     document.getElementById('editTagId').value = id;
     document.getElementById('editTagName').value = name;
     new bootstrap.Modal(document.getElementById('editTagModal')).show();
+}
+
+function toggleTagManager(highlightId) {
+    const manager = document.getElementById(`tag-manager-${highlightId}`);
+    if (manager.style.display === 'none') {
+        manager.style.display = 'block';
+        // Load current tags
+        fetch(`/get_tags_for_highlight?highlight_id=${highlightId}`)
+            .then(response => response.json())
+            .then(tags => {
+                // Uncheck all first
+                document.querySelectorAll(`#tag-list-${highlightId} .tag-checkbox`).forEach(cb => cb.checked = false);
+                // Check current tags
+                tags.forEach(tag => {
+                    const cb = document.getElementById(`tag${highlightId}-${tag.id}`);
+                    if (cb) cb.checked = true;
+                });
+            });
+    } else {
+        manager.style.display = 'none';
+    }
+}
+
+function filterTags(highlightId, query) {
+    const checkboxes = document.querySelectorAll(`#tag-list-${highlightId} .form-check`);
+    const lowerQuery = query.toLowerCase();
+    checkboxes.forEach(check => {
+        const label = check.querySelector('.form-check-label');
+        const text = label.textContent.toLowerCase();
+        check.style.display = text.includes(lowerQuery) ? '' : 'none';
+    });
+}
+
+function updateTag(highlightId, tagId, checked) {
+    const url = checked ? '/add_tag_to_highlight' : '/remove_tag_from_highlight';
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `highlight_id=${highlightId}&tag_id=${tagId}`
+    }).then(response => {
+        if (response.ok) {
+            updateTagDisplay(highlightId, tagId, checked);
+        }
+    });
+}
+
+function updateTagDisplay(highlightId, tagId, checked) {
+    const tagContainer = document.getElementById(`tag-badges-${highlightId}`);
+    const tagName = document.querySelector(`label[for="tag${highlightId}-${tagId}"]`).textContent.trim();
+    const charSum = tagName.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const hue = (charSum * 7) % 360;
+    const color = `hsl(${hue}, 70%, 60%)`;
+    
+    if (checked) {
+        // Add badge
+        const badge = document.createElement('span');
+        badge.className = 'badge me-1';
+        badge.style.backgroundColor = color;
+        badge.style.color = 'white';
+        badge.innerHTML = `${tagName} <button class="btn btn-sm btn-link text-white p-0 ms-1" onclick="removeTag(${highlightId}, ${tagId})">×</button>`;
+        tagContainer.appendChild(badge);
+    } else {
+        // Remove badge
+        const badges = tagContainer.querySelectorAll('.badge');
+        badges.forEach(badge => {
+            if (badge.textContent.includes(tagName)) {
+                badge.remove();
+            }
+        });
+    }
+}
+
+function removeTag(highlightId, tagId) {
+    fetch('/remove_tag_from_highlight', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `highlight_id=${highlightId}&tag_id=${tagId}`
+    }).then(() => location.reload());
 }
 </script>
 {% endblock %}
